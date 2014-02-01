@@ -1,0 +1,176 @@
+unit Unit1;
+
+interface
+
+uses
+  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
+  Dialogs, StdCtrls, pngimage, ExtCtrls, IdBaseComponent, IdComponent,
+  IdTCPConnection, IdTCPClient, IdTelnet, IniFiles;
+
+type
+  TForm1 = class(TForm)
+    Image1: TImage;
+    GroupBox1: TGroupBox;
+    Memo1: TMemo;
+    GroupBox2: TGroupBox;
+    Button1: TButton;
+    Button2: TButton;
+    Label1: TLabel;
+    Label2: TLabel;
+    IdTelnet1: TIdTelnet;
+    Timer1: TTimer;
+    Edit1: TLabeledEdit;
+    Label3: TLabel;
+    Label4: TLabel;
+    Label5: TLabel;
+    Label6: TLabel;
+    Label7: TLabel;
+    Label8: TLabel;
+    procedure FormCreate(Sender: TObject);
+    procedure Button1Click(Sender: TObject);
+    procedure Button2Click(Sender: TObject);
+    procedure Timer1Timer(Sender: TObject);
+    procedure IdTelnet1Connected(Sender: TObject);
+    procedure IdTelnet1Connect(Sender: TObject);
+    procedure IdTelnet1Disconnect(Sender: TObject);
+    procedure IdTelnet1Disconnected(Sender: TObject);
+  private
+    { Private declarations }
+  public
+    { Public declarations }
+  end;
+
+var
+  Form1: TForm1;
+
+implementation
+
+uses Unit2;
+
+{$R *.dfm}
+
+function EnDecryptString(StrValue : String; Chave: Word) : String;
+var
+I: Integer;
+OutValue : String;
+begin
+  OutValue := '';
+  for I := 1 to Length(StrValue) do
+  OutValue := OutValue + char(Not(ord(StrValue[I])-Chave));
+  Result := OutValue;
+end;
+
+procedure TForm1.FormCreate(Sender: TObject);
+var
+  ArqIni: TIniFile;
+  Total, Lastg, Recordg: string;
+begin
+ArqIni := TIniFile.Create(ExtractFilePath(Application.ExeName) + 'config.ini');
+Total := ArqIni.ReadString('Outros', 'Total', '');
+Recordg := ArqIni.ReadString('Outros', 'Record', '');
+Lastg := ArqIni.ReadString('Outros', 'Last', '');
+Total := EnDecryptString(Total, 236);
+Recordg := EnDecryptString(Recordg, 236);
+Lastg := EnDecryptString(Lastg, 236);
+Label6.Caption := Total;
+Label7.Caption := Recordg;
+Label8.Caption := Lastg;
+end;
+
+procedure TForm1.Button1Click(Sender: TObject);
+var
+  ArqIni: TIniFile;
+  Interval: integer;
+  Port: integer;
+  Password, Total, Lastg, Recordg: string;
+begin
+if Button1.Caption = 'Iniciar flood' then begin
+Memo1.Lines.Add('Iniciando flood...');
+ArqIni := TIniFile.Create(ExtractFilePath(Application.ExeName) + 'config.ini');
+IdTelnet1.Host := ArqIni.ReadString('Conexão', 'SvIP', '');
+Port := StrToInt(ArqIni.ReadString('Conexão', 'QrPort', ''));
+Password := ArqIni.ReadString('Conexão', 'Password', '');
+Password := EnDecryptString(Password, 236);
+IdTelnet1.Port := Port;
+IdTelnet1.Connect;
+Sleep(300);
+IdTelnet1.WriteLn('login ' + ArqIni.ReadString('Conexão', 'Login', '') + ' ' + Password);
+IdTelnet1.WriteLn('use port=' + ArqIni.ReadString('Conexão', 'SvPort', '') + ' -virtual');
+IdTelnet1.WriteLn('clientupdate client_nickname=' + ArqIni.ReadString('Conexão', 'QrName', ''));
+IdTelnet1.WriteLn('instanceedit serverinstance_serverquery_flood_commands=9999 serverinstance_serverquery_flood_time=9999999');
+Interval := StrToInt(ArqIni.ReadString('Configs', 'PokesML', ''));
+Timer1.Interval := Interval;
+Timer1.Enabled := True;
+Button1.Caption := 'Parar flood';
+Button2.Enabled := False;
+end
+else if Button1.Caption = 'Parar flood' then
+begin
+ArqIni := TIniFile.Create(ExtractFilePath(Application.ExeName) + 'config.ini');
+Memo1.Lines.Add('Parando flood...');
+Timer1.Enabled := False;
+IdTelnet1.WriteLn('instanceedit serverinstance_serverquery_flood_commands=50 serverinstance_serverquery_flood_time=3');
+Sleep(50);
+IdTelnet1.WriteLn('logout');
+Sleep(50);
+IdTelnet1.Disconnect;
+Label8.Caption := Label1.Caption;
+Label1.Caption := '0';
+Total := EnDecryptString(Label6.Caption, 236);
+Lastg := EnDecryptString(Label8.Caption, 236);
+ArqIni.WriteString('Outros', 'Record', Total);
+ArqIni.WriteString('Outros', 'Last', Lastg);
+if Label7.Caption > Label8.Caption then begin
+Label8.Caption := Label7.Caption;
+Recordg := EnDecryptString(Label7.Caption, 236);
+ArqIni.WriteString('Outros', 'Last', Recordg);
+end;
+Button1.Caption := 'Iniciar flood';
+Button2.Enabled := True;
+end
+end;
+
+procedure TForm1.Button2Click(Sender: TObject);
+begin
+Form2.show
+end;
+
+procedure TForm1.Timer1Timer(Sender: TObject);
+var
+  ArqIni: TIniFile;
+  num1, num2, num3, res, res2 : real;
+begin
+ArqIni := TIniFile.Create(ExtractFilePath(Application.ExeName) + 'config.ini');
+IdTelnet1.WriteLn('clientpoke clid=' + ArqIni.ReadString('Configs', 'UserDBID', '') + ' msg=' + Edit1.Text);
+num1:= StrTofloat(label1.Caption);
+num2:= StrToFloat('1');
+num3:= StrTofloat(label6.Caption);
+res:= (num1+num2);
+res2:= (num3+num2);
+label1.Caption := FloatToStr(res);
+label6.Caption := FloatToStr(res2);
+end;
+
+procedure TForm1.IdTelnet1Connected(Sender: TObject);
+begin
+Memo1.Lines.Add('Tentando se conectar ao servidor...');
+end;
+
+procedure TForm1.IdTelnet1Connect(Sender: TObject);
+begin
+Memo1.Lines.Add('Conectado com sucesso ao servidor!');
+Memo1.Lines.Add('Flood iniciado: ' + Edit1.Text);
+end;
+
+procedure TForm1.IdTelnet1Disconnect(Sender: TObject);
+begin
+Memo1.Lines.Add('Desconectado!');
+end;
+
+procedure TForm1.IdTelnet1Disconnected(Sender: TObject);
+begin
+Memo1.Lines.Add('Desconectando...');
+Memo1.Lines.Add('Flood cessado!')
+end;
+
+end.
