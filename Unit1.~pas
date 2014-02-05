@@ -63,12 +63,18 @@ end;
 procedure TForm1.FormCreate(Sender: TObject);
 var
   ArqIni: TIniFile;
-  Recordd: string;
+  Total, Lastg, Recordg: string;
 begin
 ArqIni := TIniFile.Create(ExtractFilePath(Application.ExeName) + 'config.ini');
-Recordd := ArqIni.ReadString('Outros', 'Record', '');
-Recordd := EnDecryptString(Recordd, 236);
-Label6.Caption := Recordd;
+Total := ArqIni.ReadString('Outros', 'Total', '');
+Recordg := ArqIni.ReadString('Outros', 'Record', '');
+Lastg := ArqIni.ReadString('Outros', 'Last', '');
+Total := EnDecryptString(Total, 236);
+Recordg := EnDecryptString(Recordg, 236);
+Lastg := EnDecryptString(Lastg, 236);
+Label6.Caption := Total;
+Label7.Caption := Recordg;
+Label8.Caption := Lastg;
 end;
 
 procedure TForm1.Button1Click(Sender: TObject);
@@ -76,7 +82,7 @@ var
   ArqIni: TIniFile;
   Interval: integer;
   Port: integer;
-  Password, Recordg, Lastg: string;
+  Password, Total, Lastg, Recordg: string;
 begin
 if Button1.Caption = 'Iniciar flood' then begin
 Memo1.Lines.Add('Iniciando flood...');
@@ -110,10 +116,15 @@ Sleep(50);
 IdTelnet1.Disconnect;
 Label8.Caption := Label1.Caption;
 Label1.Caption := '0';
-Recordg := EnDecryptString(Label6.Caption, 236);
+Total := EnDecryptString(Label6.Caption, 236);
 Lastg := EnDecryptString(Label8.Caption, 236);
-ArqIni.WriteString('Outros', 'Record', Recordg);
+ArqIni.WriteString('Outros', 'Record', Total);
 ArqIni.WriteString('Outros', 'Last', Lastg);
+if Label7.Caption > Label8.Caption then begin
+Label8.Caption := Label7.Caption;
+Recordg := EnDecryptString(Label7.Caption, 236);
+ArqIni.WriteString('Outros', 'Last', Recordg);
+end;
 Button1.Caption := 'Iniciar flood';
 Button2.Enabled := True;
 end

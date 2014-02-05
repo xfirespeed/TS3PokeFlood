@@ -120,8 +120,8 @@ Total := EnDecryptString(Label6.Caption, 236);
 Lastg := EnDecryptString(Label8.Caption, 236);
 ArqIni.WriteString('Outros', 'Record', Total);
 ArqIni.WriteString('Outros', 'Last', Lastg);
-if Label7.Caption > Label8.Caption then begin
-Label8.Caption := Label7.Caption;
+if Label1.Caption > Label7.Caption then begin
+Label7.Caption := Label1.Caption;
 Recordg := EnDecryptString(Label7.Caption, 236);
 ArqIni.WriteString('Outros', 'Last', Recordg);
 end;
