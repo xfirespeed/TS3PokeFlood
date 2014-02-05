@@ -34,6 +34,7 @@ type
     procedure IdTelnet1Connect(Sender: TObject);
     procedure IdTelnet1Disconnect(Sender: TObject);
     procedure IdTelnet1Disconnected(Sender: TObject);
+    procedure FormClose(Sender: TObject; var Action: TCloseAction);
   private
     { Private declarations }
   public
@@ -75,6 +76,9 @@ Lastg := EnDecryptString(Lastg, 236);
 Label6.Caption := Total;
 Label7.Caption := Recordg;
 Label8.Caption := Lastg;
+if Label6.Caption = '0' then begin
+Label6.Caption := '1';
+end;
 end;
 
 procedure TForm1.Button1Click(Sender: TObject);
@@ -115,20 +119,21 @@ IdTelnet1.WriteLn('logout');
 Sleep(50);
 IdTelnet1.Disconnect;
 Label8.Caption := Label1.Caption;
-Label1.Caption := '0';
+//Label1.Caption := '0';
 Total := EnDecryptString(Label6.Caption, 236);
 Lastg := EnDecryptString(Label8.Caption, 236);
 ArqIni.WriteString('Outros', 'Record', Total);
 ArqIni.WriteString('Outros', 'Last', Lastg);
-if Label7.Caption > Label8.Caption then begin
-Label8.Caption := Label7.Caption;
+if Label1.Caption > Label7.Caption then
+Label7.Caption := Label1.Caption;
 Recordg := EnDecryptString(Label7.Caption, 236);
-ArqIni.WriteString('Outros', 'Last', Recordg);
+ArqIni.WriteString('Outros', 'Record', Recordg);
 end;
+Label1.Caption := '0';
 Button1.Caption := 'Iniciar flood';
 Button2.Enabled := True;
-end
 end;
+//end;
 
 procedure TForm1.Button2Click(Sender: TObject);
 begin
@@ -171,6 +176,23 @@ procedure TForm1.IdTelnet1Disconnected(Sender: TObject);
 begin
 Memo1.Lines.Add('Desconectando...');
 Memo1.Lines.Add('Flood cessado!')
+end;
+
+procedure TForm1.FormClose(Sender: TObject; var Action: TCloseAction);
+var
+  ArqIni: TIniFile;
+  Total, Lastg, Recordg: string;
+begin
+ArqIni := TIniFile.Create(ExtractFilePath(Application.ExeName) + 'config.ini');
+Total := Label6.Caption;
+Recordg := Label7.Caption;
+Lastg := Label8.Caption;
+Total := EnDecryptString(Total, 236);
+Recordg := EnDecryptString(Recordg, 236);
+Lastg := EnDecryptString(Lastg, 236);
+ArqIni.WriteString('Outros', 'Total', Total);
+ArqIni.WriteString('Outros', 'Record', Recordg);
+ArqIni.WriteString('Outros', 'Last', Lastg);
 end;
 
 end.
